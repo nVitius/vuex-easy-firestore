@@ -671,7 +671,17 @@ export default function (Firebase: any): AnyObject {
         })
       }
       const processCollection = docChanges => {
-        docChanges.forEach((docChange: DocumentChange) => {
+        const { added, other } = docChanges.reduce((res, curr) => {
+          if (curr.type === 'added')
+            res.added[curr.doc.id] = getters.cleanUpRetrievedDoc(curr.doc.data(), curr.doc.id)
+          else
+            res.other.push(curr)
+
+          return res
+        }, { added: [], other: [] })
+
+        commit('INSERT_DOCS', added)
+        other.forEach((docChange: DocumentChange) => {
           const docSnapshot: QueryDocumentSnapshot = docChange.doc
           const doc = getters.cleanUpRetrievedDoc(docSnapshot.data(), docSnapshot.id)
           dispatch('applyHooksAndUpdateState', {

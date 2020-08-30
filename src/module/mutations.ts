@@ -98,6 +98,13 @@ export default function (userState: object): AnyObject {
       const { syncStack } = _sync
       state._sync.syncStack = syncStack
     },
+    INSERT_DOCS(state, docs) {
+      if (state._conf.statePropName) {
+        state[state._conf.statePropName] = Object.assign({}, state[state._conf.statePropName], docs)
+      } else {
+        state = Object.assign({}, state, docs)
+      }
+    },
     INSERT_DOC (state, doc) {
       if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return
       if (state._conf.statePropName) {

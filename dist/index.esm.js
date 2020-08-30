@@ -2431,6 +2431,14 @@ function pluginMutations (userState) {
             var syncStack = _sync.syncStack;
             state._sync.syncStack = syncStack;
         },
+        INSERT_DOCS: function (state, docs) {
+            if (state._conf.statePropName) {
+                state[state._conf.statePropName] = Object.assign({}, state[state._conf.statePropName], docs);
+            }
+            else {
+                state = Object.assign({}, state, docs);
+            }
+        },
         INSERT_DOC: function (state, doc) {
             if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
                 return;
@@ -3485,7 +3493,15 @@ function pluginActions (Firebase) {
                 });
             };
             var processCollection = function (docChanges) {
-                docChanges.forEach(function (docChange) {
+                var _a = docChanges.reduce(function (res, curr) {
+                    if (curr.type === 'added')
+                        res.added[curr.doc.id] = getters.cleanUpRetrievedDoc(curr.doc.data(), curr.doc.id);
+                    else
+                        res.other.push(curr);
+                    return res;
+                }, { added: [], other: [] }), added = _a.added, other = _a.other;
+                commit('INSERT_DOCS', added);
+                other.forEach(function (docChange) {
                     var docSnapshot = docChange.doc;
                     var doc = getters.cleanUpRetrievedDoc(docSnapshot.data(), docSnapshot.id);
                     dispatch('applyHooksAndUpdateState', {
